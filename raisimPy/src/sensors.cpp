@@ -205,15 +205,22 @@ void init_sensors(py::module &m) {
     py::class_<raisim::DepthCamera, raisim::Sensor>(m, "DepthCamera", "Raisim Depth Camera")
         // depth camera init function?
 
+        // TODO: make output more useful? convert to numpy array?
         .def("getDepthArray", [](raisim::DepthCamera &self){
             std::vector<float> depth;
             depth = self.getDepthArray();
-        }, R"mydelimiter(get array of depth data)mydelimiter" )
+            py::list depth_list = py::cast(depth);
+            return depth_list;
+        }, R"mydelimiter(get depth data as list of floats)mydelimiter" )
 
+        // TODO: make output more useful? convert to numpy array?
         .def("get3DPoints", [](raisim::DepthCamera &self){
-            std::vector<raisim::Vec<3>, AlignedAllocator<raisim::Vec<3>, 32>> threeDPoints;
+            std::vector< raisim::Vec<3>, AlignedAllocator<raisim::Vec<3>, 32> > threeDPoints;
             threeDPoints = self.get3DPoints();
-        }, R"mydelimiter(get array of 3D points)mydelimiter" )
+            // make tuples then make list?
+            py::list points_list = py::cast(threeDPoints);
+            return points_list;
+        }, R"mydelimiter(get 3D points as lists)mydelimiter" )
 
         .def("getProperties", &raisim::DepthCamera::getProperties, R"mydelimiter(get properties struct)mydelimiter" )
 
@@ -225,10 +232,13 @@ void init_sensors(py::module &m) {
     py::class_<raisim::RGBCamera, raisim::Sensor>(m, "RGBCamera", "Raisim RGB Camera")
         // RGB camera init function?
 
+        // TODO: make output more useful? convert to numpy array?
         .def("getImageBuffer", [](raisim::RGBCamera &self){
             std::vector<char> bgra;
             bgra = self.getImageBuffer();
-        }, R"mydelimiter(get image data in char vector (bgra))mydelimiter" )
+            py::list bgra_list = py::cast(bgra);
+            return bgra_list;
+        }, R"mydelimiter(get image data as list of chars (bgra))mydelimiter" )
 
         .def("getProperties", &raisim::RGBCamera::getProperties, R"mydelimiter(get properties struct)mydelimiter" )
 
