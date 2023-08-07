@@ -25,6 +25,7 @@ using namespace raisim;
 void init_world(py::module &m) {
 
   py::class_<raisim::PolyLine>(m, "Polyline")
+      .def_readwrite("width", &raisim::PolyLine::width)
       .def("setColor", &raisim::PolyLine::setColor, R"mydelimiter(
 	    Set the color of the visual body.
         Args:

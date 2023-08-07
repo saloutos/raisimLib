@@ -31,6 +31,11 @@
 #include "raisim/object/ArticulatedSystem/JointAndBodies.hpp"
 #include "raisim/object/ArticulatedSystem/ArticulatedSystem.hpp"
 
+// contains sensor information 
+#include "raisim/sensors/RGBSensor.hpp"
+#include "raisim/sensors/DepthSensor.hpp"
+#include "raisim/sensors/InertialMeasurementUnit.hpp"
+
 #include "converter.hpp"  // contains code that allows to convert between the Vec, Mat to numpy arrays.
 
 // Important note: for the above include ("ode/src/collision_kernel.h"), you have to add a `extras` folder in the
@@ -1637,6 +1642,21 @@ void init_articulated_system(py::module &m) { // py::module &main_module) {
 	        id_ (int): collision object id.
 	        orientation (np.array[float[3]], np.array[float[4]], np.array[float[3,3]]): orientation offset.
 	    )mydelimiter",
-	    py::arg("id_"), py::arg("orientation"));
+	    py::arg("id_"), py::arg("orientation")) //;
+
+        // looking for sensors in articulated system
+        .def("listSensors", [](raisim::ArticulatedSystem &self) {
+            py::list sensor_list;
+            std::unordered_map<std::string, std::shared_ptr<Sensor>> as_sensors = self.getSensors();
+            for (auto i = as_sensors.begin(); i != as_sensors.end(); i++){
+                sensor_list.append(i->first);
+            }
+            return sensor_list;
+        }, R"mydelimiter(
+        Returns list of sensors attached to the ArticulatedSystem.
+        )mydelimiter");
+
+
+
 
 }

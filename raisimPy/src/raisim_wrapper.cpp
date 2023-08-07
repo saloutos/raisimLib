@@ -38,6 +38,7 @@ void init_math(py::module &);
 void init_materials(py::module &);
 void init_object(py::module &);
 void init_constraints(py::module &);
+void init_sensors(py::module &);
 void init_contact(py::module &);
 void init_world(py::module &);
 
@@ -89,7 +90,12 @@ PYBIND11_MODULE(raisimpy, m) {
     /*********************/
 	/* raisim.constraint */
 	/*********************/
-  init_constraints(m);
+	init_constraints(m);
+
+	/*********************/
+	/* raisim.sensors */
+	/*********************/
+	init_sensors(m);
 
     /*********/
 	/* World */
