@@ -213,14 +213,20 @@ void init_sensors(py::module &m) {
             return depth_list;
         }, R"mydelimiter(get depth data as list of floats)mydelimiter" )
 
-        // TODO: make output more useful? convert to numpy array?
+        // TODO: make this faster?
         .def("get3DPoints", [](raisim::DepthCamera &self){
             std::vector< raisim::Vec<3>, AlignedAllocator<raisim::Vec<3>, 32> > threeDPoints;
             threeDPoints = self.get3DPoints();
-            // make tuples then make list?
-            py::list points_list = py::cast(threeDPoints);
-            return points_list;
-        }, R"mydelimiter(get 3D points as lists)mydelimiter" )
+            size_t n = threeDPoints.size();
+            size_t m = threeDPoints[0].size();
+            py::array_t<double> threeDPoints_array({n,m});
+            for (size_t i=0; i<n; i++){
+                for (size_t j=0; j<m; j++){
+                    *threeDPoints_array.mutable_data(i,j) = threeDPoints[i][j];
+                }
+            }
+            return threeDPoints_array;
+        }, R"mydelimiter(get 3D points as array)mydelimiter" )
 
         .def("getProperties", &raisim::DepthCamera::getProperties, R"mydelimiter(get properties struct)mydelimiter" )
 
@@ -235,6 +241,7 @@ void init_sensors(py::module &m) {
         // TODO: make output more useful? convert to numpy array?
         .def("getImageBuffer", [](raisim::RGBCamera &self){
             std::vector<char> bgra;
+
             bgra = self.getImageBuffer();
             py::list bgra_list = py::cast(bgra);
             return bgra_list;
