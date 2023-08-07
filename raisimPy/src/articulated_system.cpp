@@ -31,7 +31,8 @@
 #include "raisim/object/ArticulatedSystem/JointAndBodies.hpp"
 #include "raisim/object/ArticulatedSystem/ArticulatedSystem.hpp"
 
-// contains sensor information 
+// contains sensor information
+#include "raisim/sensors/Sensors.hpp"
 #include "raisim/sensors/RGBSensor.hpp"
 #include "raisim/sensors/DepthSensor.hpp"
 #include "raisim/sensors/InertialMeasurementUnit.hpp"
@@ -1654,9 +1655,29 @@ void init_articulated_system(py::module &m) { // py::module &main_module) {
             return sensor_list;
         }, R"mydelimiter(
         Returns list of sensors attached to the ArticulatedSystem.
-        )mydelimiter");
+        )mydelimiter")
 
+        // looking for sensors in articulated system
+        .def("getSensors", [](raisim::ArticulatedSystem &self) {
+            py::dict sensor_dict;
+            std::unordered_map<std::string, std::shared_ptr<Sensor>> as_sensors = self.getSensors();
+            for (auto i = as_sensors.begin(); i != as_sensors.end(); i++){
+                std::string key = i->first;
+                auto sensor = i->second;
+                sensor_dict[pybind11::cast(key)] = sensor;
+            }
+            return sensor_dict;
+        }, R"mydelimiter(
+        Returns a dict of sensors attached to the ArticulatedSystem.
+        )mydelimiter")
 
+        // TODO: figure out how to do this?
+        // get sensor by name
+        // .def("getSensor", [](raisim::ArticulatedSystem &self, py::str name){
+        //     auto sensor = self.getSensor(name);
+        //     return sensor;
+        //     }, R"mydelimiter(get a sensor by name)mydelimiter", py::arg("name"))
 
+        ;
 
 }

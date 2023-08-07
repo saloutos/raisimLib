@@ -30,8 +30,9 @@
 #include "raisim/object/Object.hpp"
 #include "raisim/helper.hpp"
 #include "raisim/server/SerializationHelper.hpp"
+#include "raisim/World.hpp"
 
-// contains sensor information 
+// contains sensor information
 #include "raisim/sensors/Sensors.hpp"
 #include "raisim/sensors/RGBSensor.hpp"
 #include "raisim/sensors/DepthSensor.hpp"
@@ -86,143 +87,190 @@ void init_sensors(py::module &m) {
         .value("GAUSSIAN", raisim::InertialMeasurementUnit::ImuProperties::NoiseType::GAUSSIAN)
         .value("UNIFORM", raisim::InertialMeasurementUnit::ImuProperties::NoiseType::UNIFORM)
         .value("NO_NOISE", raisim::InertialMeasurementUnit::ImuProperties::NoiseType::NO_NOISE);
-    
-    // sensor class:
-    // sensor init function
-    // sensor getPosition
-    // sensor getOrientation
 
-    /********************/
-	/* SingleBodyObject */
-	/********************/
-	// SingleBodyObject class (from include/raisim/object/singleBodies/SingleBodyObject.hpp)
-	py::class_<raisim::SingleBodyObject, raisim::Object>(m, "SingleBodyObject", "Raisim Single Object from which all single objects/bodies (such as box, sphere, etc) inherit from.")
+    // depth camera properties
+    py::class_<raisim::DepthCamera::DepthCameraProperties>(m, "DepthCameraProperties", "Raisim depth camera properties")
+        // init function?
+        .def_readwrite("name", &raisim::DepthCamera::DepthCameraProperties::name)
+        .def_readwrite("width", &raisim::DepthCamera::DepthCameraProperties::width)
+        .def_readwrite("height", &raisim::DepthCamera::DepthCameraProperties::height)
+        .def_readwrite("clipNear", &raisim::DepthCamera::DepthCameraProperties::clipNear)
+        .def_readwrite("clipFar", &raisim::DepthCamera::DepthCameraProperties::clipFar)
+        .def_readwrite("hFOV", &raisim::DepthCamera::DepthCameraProperties::hFOV)
+        .def_readwrite("dataType", &raisim::DepthCamera::DepthCameraProperties::dataType)
+        .def_readwrite("noiseType", &raisim::DepthCamera::DepthCameraProperties::noiseType)
+        .def_readwrite("mean", &raisim::DepthCamera::DepthCameraProperties::mean)
+        .def_readwrite("std", &raisim::DepthCamera::DepthCameraProperties::std)
+    ;
 
-	    .def(py::init<raisim::ObjectType>(), "Initialize the Object.", py::arg("object_type"))
+    // RGB camera properties
+    py::class_<raisim::RGBCamera::RGBCameraProperties>(m, "RGBCameraProperties", "Raisim RGB camera properties")
+        // init function?
+        .def_readwrite("name", &raisim::RGBCamera::RGBCameraProperties::name)
+        .def_readwrite("width", &raisim::RGBCamera::RGBCameraProperties::width)
+        .def_readwrite("height", &raisim::RGBCamera::RGBCameraProperties::height)
+        .def_readwrite("clipNear", &raisim::RGBCamera::RGBCameraProperties::clipNear)
+        .def_readwrite("clipFar", &raisim::RGBCamera::RGBCameraProperties::clipFar)
+        .def_readwrite("hFOV", &raisim::RGBCamera::RGBCameraProperties::hFOV)
+        .def_readwrite("noiseType", &raisim::RGBCamera::RGBCameraProperties::noiseType)
+        .def_readwrite("mean", &raisim::RGBCamera::RGBCameraProperties::mean)
+        .def_readwrite("std", &raisim::RGBCamera::RGBCameraProperties::std)
+    ;
+
+    // IMU properties
+    py::class_<raisim::InertialMeasurementUnit::ImuProperties>(m, "IMUProperties", "Raisim IMU properties")
+        // init function?
+        .def_readwrite("name", &raisim::InertialMeasurementUnit::ImuProperties::name)
+        .def_readwrite("maxAcc", &raisim::InertialMeasurementUnit::ImuProperties::maxAcc)
+        .def_readwrite("maxAngVel", &raisim::InertialMeasurementUnit::ImuProperties::maxAngVel)
+        .def_readwrite("noiseType", &raisim::InertialMeasurementUnit::ImuProperties::noiseType)
+        .def_readwrite("mean", &raisim::InertialMeasurementUnit::ImuProperties::mean)
+        .def_readwrite("std", &raisim::InertialMeasurementUnit::ImuProperties::std)
+    ;
+
+    /**********/
+	/* Sensor */
+	/**********/
+	// Sensor class (from include/raisim/sensors/Sensors.hpp)
+    // TODO: improve function documentation
+    py::class_<raisim::Sensor>(m, "Sensor", "Raisim Sensor from which all other sensors inherit from.")
+
+        // sensor init function?
+
+        .def("getName", &raisim::Sensor::getName, R"mydelimiter(
+            Get the sensor's name.
+
+            Returns:
+                str: sensor's name.
+            )mydelimiter")
+
+        .def("getType", &raisim::Sensor::getType, R"mydelimiter(get sensor type)mydelimiter" )
+
+        .def("getPosition", [](raisim::Sensor &self){
+            Vec<3> pos;
+            pos = self.getPosition();
+            return convert_vec_to_np(pos);
+        }, R"mydelimiter(get the position of the sensor frame)mydelimiter" )
+
+        .def("getOrientation", [](raisim::Sensor &self){
+            Mat<3,3> rot;
+            rot = self.getOrientation();
+            return convert_mat_to_np(rot);
+        }, R"mydelimiter(get orientation of the sensor frame)mydelimiter" )
+
+        .def("getFramePosition", [](raisim::Sensor &self){
+            Vec<3> pos;
+            pos = self.getFramePosition();
+            return convert_vec_to_np(pos);
+        }, R"mydelimiter(get the position of the frame w.r.t. the nearest moving parent)mydelimiter" )
+
+        .def("getFrameOrientation", [](raisim::Sensor &self){
+            Mat<3,3> rot;
+            rot = self.getFrameOrientation();
+            return convert_mat_to_np(rot);
+        }, R"mydelimiter(get orientation of the frame w.r.t. the nearest moving parent)mydelimiter" )
+
+        .def("getFrameID", &raisim::Sensor::getFrameId, R"mydelimiter(get ID of frame on which the sensor is attached)mydelimiter" )
+
+        .def("getPosInSensorFrame", [](raisim::Sensor &self){
+            Vec<3> pos;
+            pos = self.getPosInSensorFrame();
+            return convert_vec_to_np(pos);
+        }, R"mydelimiter(get the position of the frame w.r.t. the sensor frame)mydelimiter" )
+
+        .def("getOriInSensorFrame", [](raisim::Sensor &self){
+            Mat<3,3> rot;
+            rot = self.getOriInSensorFrame();
+            return convert_mat_to_np(rot);
+        }, R"mydelimiter(get orientation of the frame w.r.t. the sensor frame)mydelimiter" )
+
+        // make a property?
+        .def("getUpdateRate", &raisim::Sensor::getUpdateRate, R"mydelimiter(get update rate in Hz)mydelimiter")
+        .def("setUpdateRate", &raisim::Sensor::setUpdateRate, R"mydelimiter(set update rate in Hz)mydelimiter", py::arg("rate"))
+
+        .def("getUpdateTimeStamp", &raisim::Sensor::getUpdateTimeStamp, R"mydelimiter(get time of last sensor measurement)mydelimiter" )
+        .def("setUpdateTimeStamp", &raisim::Sensor::setUpdateTimeStamp, R"mydelimiter(set time of last sensor measurement)mydelimiter", py::arg("time"))
+
+        .def("getMeasurementSource", &raisim::Sensor::getMeasurementSource, R"mydelimiter(get measurement source)mydelimiter")
+        .def("setMeasurementSource", &raisim::Sensor::setMeasurementSource, R"mydelimiter(set measurement source)mydelimiter", py::arg("source"))
+
+        .def("updatePose", &raisim::Sensor::updatePose, R"mydelimiter(update pose from articulated system)mydelimiter" )
+
+        // .def("update", &raisim::Sensor::update, R"mydelimiter(update sensor measurement, using Raisim if possible)mydelimiter", py::arg("world"))
+
+        ;
 
 
-        .def("getQuaternion", py::overload_cast<>(&raisim::SingleBodyObject::getQuaternion, py::const_), R"mydelimiter(
-	    Get the body's orientation (expressed as a quaternion [w,x,y,z]) with respect to the world frame.
+    // depth camera sensor class:
+    py::class_<raisim::DepthCamera, raisim::Sensor>(m, "DepthCamera", "Raisim Depth Camera")
+        // depth camera init function?
 
-	    Returns:
-	        np.array[float[4]]: quaternion [w,x,y,z].
-	    )mydelimiter")
+        .def("getDepthArray", [](raisim::DepthCamera &self){
+            std::vector<float> depth;
+            depth = self.getDepthArray();
+        }, R"mydelimiter(get array of depth data)mydelimiter" )
 
+        .def("get3DPoints", [](raisim::DepthCamera &self){
+            std::vector<raisim::Vec<3>, AlignedAllocator<raisim::Vec<3>, 32>> threeDPoints;
+            threeDPoints = self.get3DPoints();
+        }, R"mydelimiter(get array of 3D points)mydelimiter" )
 
-	    .def("getRotationMatrix", py::overload_cast<>(&raisim::SingleBodyObject::getRotationMatrix, py::const_), R"mydelimiter(
-	    Get the body's orientation (expressed as a rotation matrix) with respect to the world frame.
+        .def("getProperties", &raisim::DepthCamera::getProperties, R"mydelimiter(get properties struct)mydelimiter" )
 
-	    Returns:
-	        np.array[float[3,3]]: rotation matrix.
-	    )mydelimiter")
+        .def("update", &raisim::DepthCamera::update, R"mydelimiter(update sensor measurement)mydelimiter", py::arg("world"))
 
-
-	    .def("getPosition", py::overload_cast<>(&raisim::SingleBodyObject::getPosition, py::const_), R"mydelimiter(
-	    Get the body's position with respect to the world frame.
-
-	    Returns:
-	        np.array[float[3]]: position in the world frame.
-	    )mydelimiter")
-
-
-	    .def("getComPosition", &raisim::SingleBodyObject::getComPosition, R"mydelimiter(
-	    Get the body's center of mass position with respect to the world frame.
-
-	    Returns:
-	        np.array[float[3]]: center of mass position in the world frame.
-	    )mydelimiter")
-
-
-	    .def("getLinearVelocity", py::overload_cast<>(&raisim::SingleBodyObject::getLinearVelocity, py::const_), R"mydelimiter(
-	    Get the body's linear velocity with respect to the world frame.
-
-	    Returns:
-	        np.array[float[3]]: linear velocity in the world frame.
-	    )mydelimiter")
-
-
-	    .def("getAngularVelocity", py::overload_cast<>(&raisim::SingleBodyObject::getAngularVelocity, py::const_), R"mydelimiter(
-	    Get the body's angular velocity position with respect to the world frame.
-
-	    Returns:
-	        np.array[float[3]]: angular velocity in the world frame.
-	    )mydelimiter")
-
-	    .def("getKineticEnergy", &raisim::SingleBodyObject::getKineticEnergy, R"mydelimiter(
-	    Get the body's kinetic energy.
-
-	    Returns:
-	        float: kinetic energy.
-	    )mydelimiter")
-
-
-	    .def("getPotentialEnergy", [](raisim::SingleBodyObject &self, py::array_t<double> gravity) {
-            Vec<3> g = convert_np_to_vec<3>(gravity);
-	        return self.getPotentialEnergy(g);
-	    }, R"mydelimiter(
-	    Get the body's potential energy due to gravity.
-
-	    Args:
-	        gravity (np.array[float[3]]): gravity vector.
-
-	    Returns:
-	        float: potential energy.
-	    )mydelimiter",
-	    py::arg("gravity"))
-
-
-	    .def("getEnergy", [](raisim::SingleBodyObject &self, py::array_t<double> gravity) {
-            Vec<3> g = convert_np_to_vec<3>(gravity);
-	        return self.getEnergy(g);
-	    }, R"mydelimiter(
-	    Get the body's total energy.
-
-	    Args:
-	        gravity (np.array[float[3]]): gravity vector.
-
-	    Returns:
-	        float: total energy.
-	    )mydelimiter",
-	    py::arg("gravity"))
-
-
-    // sensor class methods:
-    // sensor getFramePosition
-    // sensor getFrameOrientation
-    // sensor getPosInSensorFrame
-    // sensor getOriInSensorFrame
-    // sensor getName
-    // sensor getType
-    // sensor getUpdateRate
-    // sensor getUpdateTimeStamp
-    // sensor setUpdateRate
-    // sensor setUpdateTimeStamp
-    // sensor updatePose
-    // sensor getMeasurementSource
-    // sensor setMeasurementSource
-    // sensor update
-    // sensor getFrameID
-
-    // depth camera sensor class:     
-    // struct for depth camera properties
-    // depth camera init function
-    // depth camera getDepthArray
-    // depth camera get3DPoints
-    // depth camera getProperties
+        ;
 
     // RGB camera sensor class:
-    // struct for RGB camera properties
-    // RGB camera init function 
-    // RGB camera getProperties
-    // RGB camera getImageBuffer
+    py::class_<raisim::RGBCamera, raisim::Sensor>(m, "RGBCamera", "Raisim RGB Camera")
+        // RGB camera init function?
+
+        .def("getImageBuffer", [](raisim::RGBCamera &self){
+            std::vector<char> bgra;
+            bgra = self.getImageBuffer();
+        }, R"mydelimiter(get image data in char vector (bgra))mydelimiter" )
+
+        .def("getProperties", &raisim::RGBCamera::getProperties, R"mydelimiter(get properties struct)mydelimiter" )
+
+        .def("update", &raisim::RGBCamera::update, R"mydelimiter(update sensor measurement)mydelimiter", py::arg("world"))
+
+        ;
+
 
     // IMU sensor class: (Don't need this one for now)
-    // struct for IMU properties
-    // IMU init function
-    // IMU getLinearAcceleration
-    // IMU getAngularVelocity
+    py::class_<raisim::InertialMeasurementUnit, raisim::Sensor>(m, "InertialMeasurementUnit", "Raisim IMU")
+        // IMU init function?
 
+        // TODO: no valid getProperties method since prop_ is a private variable
+        // // getProperties?
+        // .def("getProperties", [](raisim::InertialMeasurementUnit &self){
+        //     return self.prop_;
+        // }, R"mydelimiter(get properties struct)mydelimiter" )
 
+        .def("getLinearAcceleration", [](raisim::InertialMeasurementUnit &self){
+            Eigen::Vector3d acc;
+            acc = self.getLinearAcceleration();
+            // TODO: better way to do this?
+            Vec<3> acc_conv;
+            acc_conv[0] = acc[0];
+            acc_conv[1] = acc[1];
+            acc_conv[2] = acc[2];
+            return convert_vec_to_np(acc_conv);
+        }, R"mydelimiter(get linear acceleration measured by sensor)mydelimiter" )
 
+        .def("getAngularVelocity", [](raisim::InertialMeasurementUnit &self){
+            Eigen::Vector3d vel;
+            vel = self.getAngularVelocity();
+            // TODO: better way to do this?
+            Vec<3> vel_conv;
+            vel_conv[0] = vel[0];
+            vel_conv[1] = vel[1];
+            vel_conv[2] = vel[2];
+            return convert_vec_to_np(vel_conv);
+        }, R"mydelimiter(get angular velocity measured by sensor)mydelimiter" )
+
+        .def("update", &raisim::InertialMeasurementUnit::update, R"mydelimiter(update sensor measurement)mydelimiter", py::arg("world"))
+
+        ;
 
 }
