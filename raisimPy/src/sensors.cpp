@@ -243,8 +243,20 @@ void init_sensors(py::module &m) {
             std::vector<char> bgra;
 
             bgra = self.getImageBuffer();
-            py::list bgra_list = py::cast(bgra);
-            return bgra_list;
+            // py::list bgra_list = py::cast(bgra);
+            // return bgra_list;
+
+            size_t n = bgra.size()/4;
+            size_t m = 4;
+            int index = 0;
+            py::array_t<double> bgra_array({n,m});
+            for (size_t i=0; i<n; i++){
+                for (size_t j=0; j<m; j++){
+                    *bgra_array.mutable_data(i,j) = bgra[index];
+                    index++;
+                }
+            }
+            return bgra_array;
         }, R"mydelimiter(get image data as list of chars (bgra))mydelimiter" )
 
         .def("getProperties", &raisim::RGBCamera::getProperties, R"mydelimiter(get properties struct)mydelimiter" )

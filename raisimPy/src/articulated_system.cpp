@@ -1678,6 +1678,10 @@ void init_articulated_system(py::module &m) { // py::module &main_module) {
         //     return sensor;
         //     }, R"mydelimiter(get a sensor by name)mydelimiter", py::arg("name"))
 
+        // get and set computation of inverse dynamics
+        .def("setComputeInverseDynamics", &raisim::ArticulatedSystem::setComputeInverseDynamics, R"mydelimiter(set to compute inverse dynamics)mydelimiter", py::arg("flag"))
+        .def("getComputeInverseDynamics", &raisim::ArticulatedSystem::getComputeInverseDynamics, R"mydelimiter(get flag for computing inverse dynamics)mydelimiter")
+
         ;
 
 }
