@@ -252,7 +252,7 @@ void init_sensors(py::module &m) {
             py::array_t<double> bgra_array({n,m});
             for (size_t i=0; i<n; i++){
                 for (size_t j=0; j<m; j++){
-                    *bgra_array.mutable_data(i,j) = bgra[index];
+                    *bgra_array.mutable_data(i,j) = (unsigned char)bgra[index];
                     index++;
                 }
             }
